@@ -54,15 +54,19 @@ Visit github.com/gorilla-llm/gorilla-cli for examples and to learn more!
 def generate_random_uid():
     return str(uuid.uuid4())
 
+
 def get_git_email():
     return subprocess.check_output(["git", "config", "--global", "user.email"]).decode("utf-8").strip()
+
 
 def get_system_info():
     return platform.system()
 
+
 def write_uid_to_file(uid):
     with open(USERID_FILE, "w") as f:
         f.write(uid)
+
 
 def append_to_bash_history(selected_command):
     try:
@@ -72,10 +76,8 @@ def append_to_bash_history(selected_command):
         pass
 
 
-
-
 def prefill_shell_cmd(cmd):
-    # Inspired from 
+    # Inspired from
     stdin = 0
     # Save TTY attributes for stdin
     oldattr = termios.tcgetattr(stdin)
@@ -100,6 +102,7 @@ def raise_issue(title, body):
     issue_url = f"{ISSUE_URL}?title={issue_title}&body={issue_body}"
     print(f"If the problem persists, please raise an issue: {issue_url}")
 
+
 def check_for_updates():
     # Check if a new version of gorilla-cli is available once a day
     try:
@@ -113,7 +116,8 @@ def check_for_updates():
             latest_version = response.json()["info"]["version"]
 
             if latest_version > __version__:
-                print(f"A new version is available: {latest_version}. Update with `pip install --upgrade gorilla-cli`")
+                print(
+                    f"A new version is available: {latest_version}. Update with `pip install --upgrade gorilla-cli`")
         except Exception as e:
             print("Unable to check for updates:", e)
         try:
@@ -139,11 +143,13 @@ def get_user_id():
         try:
             user_id = get_git_email()
             print(WELCOME_TEXT)
-            response = input(f"Use your Github handle ({user_id}) as user id? [Y/n]: ").strip().lower()
+            response = input(
+                f"Use your Github handle ({user_id}) as user id? [Y/n]: ").strip().lower()
             if response in ["n", "no"]:
                 user_id = generate_random_uid()
         except Exception as e:
-            print(f"Unable to import userid from Git. Git not installed or git user.email not configured.")
+            print(
+                f"Unable to import userid from Git. Git not installed or git user.email not configured.")
             print(f"Will use a random user-id. \n")
             user_id = generate_random_uid()
             print(WELCOME_TEXT)
@@ -153,9 +159,11 @@ def get_user_id():
             return user_id
         except Exception as e:
             print(f"Unable to write userid to file: {e}")
-            raise_issue("Problem with userid file", f"Unable to write userid file: {e}")
+            raise_issue("Problem with userid file",
+                        f"Unable to write userid file: {e}")
             print(f"Using a temporary UID {user_id} for now.")
             return user_id
+
 
 def format_command(input_str):
     """
@@ -165,6 +173,7 @@ def format_command(input_str):
     if not input_str.endswith('\n'):
         input_str += '\n'
     return input_str
+
 
 def append_string_to_file_if_missing(file_path, target_string):
     """
@@ -220,11 +229,12 @@ def main():
     user_id = get_user_id()
     system_info = get_system_info()
 
-
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Gorilla CLI Help Doc")
-    parser.add_argument("-p", "--history", action="store_true", help="Display command history")
-    parser.add_argument("command_args", nargs='*', help="Prompt to be inputted to Gorilla")
+    parser.add_argument("-p", "--history", action="store_true",
+                        help="Display command history")
+    parser.add_argument("command_args", nargs='*',
+                        help="Prompt to be inputted to Gorilla")
 
     args = parser.parse_args()
 
@@ -248,7 +258,8 @@ def main():
                 commands = response.json()
             except requests.exceptions.RequestException as e:
                 print("Server is unreachable.")
-                print("Try updating Gorilla-CLI with 'pip install --upgrade gorilla-cli'")
+                print(
+                    "Try updating Gorilla-CLI with 'pip install --upgrade gorilla-cli'")
                 return
 
     check_for_updates()
@@ -261,29 +272,32 @@ def main():
         if not selected_command:
             # happens when Ctrl-C is pressed
             return
-        exit_condition = execute_command(selected_command)
-        
+        print(selected_command)
+
+        # exit_condition = execute_command(selected_command)
+
         # Append command to bash history
         if system_info == "Linux":
             append_to_bash_history(selected_command)
             prefill_shell_cmd(selected_command)
 
         # Commands failed / succeeded?
-        try:
-            response = requests.post(
-                f"{SERVER_URL}/command-execution-result",
-                json={
-                    "user_id": user_id,
-                    "command": selected_command,
-                    "exit_condition": exit_condition,
-                    "interaction_id": interaction_id,
-                },
-                timeout=30,
-            )
-            if response.status_code != 200:
-                print("Failed to send command execution result to the server.")
-        except requests.exceptions.Timeout:
-            print("Failed to send command execution result to the server: Timeout.")
+        # try:
+        #     response = requests.post(
+        #         f"{SERVER_URL}/command-execution-result",
+        #         json={
+        #             "user_id": user_id,
+        #             "command": selected_command,
+        #             "exit_condition": exit_condition,
+        #             "interaction_id": interaction_id,
+        #         },
+        #         timeout=30,
+        #     )
+        #     if response.status_code != 200:
+        #         print("Failed to send command execution result to the server.")
+        # except requests.exceptions.Timeout:
+        #     print("Failed to send command execution result to the server: Timeout.")
+
 
 if __name__ == "__main__":
     main()
